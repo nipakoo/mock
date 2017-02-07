@@ -29,6 +29,9 @@ class Buildroot(object):
         self.state = state
         self.plugins = plugins
         self.shared_root_name = config['root']
+
+        self.private_key, self.known_hosts = util.read_ssh_config()
+
         if 'unique-ext' in config:
             config['root'] = "%s-%s" % (config['root'], config['unique-ext'])
         self.root_name = config['root']
@@ -138,6 +141,8 @@ class Buildroot(object):
 
         self.pkg_manager.initialize()
         self._setup_resolver_config()
+        util.set_chroot_ssh_config('%s/root' % self.rootdir, self.private_key, self.known_hosts)
+
         if not self.chroot_was_initialized:
             self._setup_dbus_uuid()
             self._init_aux_files()
@@ -526,6 +531,7 @@ class Buildroot(object):
                                       " of nosync library need to be installed")
                 return
             self.nosync_path = os.path.join(tmp_libdir, 'nosync.so')
+
 
     @traceLog()
     def finalize(self):

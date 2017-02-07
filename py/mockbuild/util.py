@@ -1253,3 +1253,45 @@ def find_btrfs_in_chroot(mockdir, chroot_path):
         subv = l.split()[8]
         if subv.startswith(chroot_path[1:]):
             return subv
+
+
+def get_private_key_path(ssh_dir):
+    return '%s/id_rsa' % ssh_dir
+
+def get_known_hosts_path(ssh_dir):
+    return '%s/known_hosts' % ssh_dir
+
+
+@traceLog()
+def read_ssh_config():
+    ssh_dir = '%s/.ssh' % os.getenv("HOME")
+
+    private_key = None
+    known_hosts = None
+
+    with open(get_private_key_path(ssh_dir), 'r') as private_key_file:
+        private_key = private_key_file.read()
+    with open(get_known_hosts_path(ssh_dir), 'r') as known_hosts_file:
+        known_hosts = known_hosts_file.read()
+
+    return (private_key, known_hosts)
+
+
+@traceLog()
+def set_chroot_ssh_config(chroot_home, private_key, known_hosts):
+    log = getLog()
+    ssh_dir = '%s/.ssh' % chroot_home
+
+    if not os.path.exists(ssh_dir):
+        os.makedirs(ssh_dir)
+
+    if private_key != None:
+        private_key_path = get_private_key_path(ssh_dir)
+        with open(private_key_path, 'w') as private_key_file:
+            private_key_file.write(private_key)
+        os.chmod(private_key_path, stat.S_IRUSR)
+        log.debug("Copied private key to chroot home")
+    if known_hosts != None:
+        with open(get_known_hosts_path(ssh_dir), 'w') as known_hosts_file:
+            known_hosts_file.write(known_hosts)
+        log.debug("Copied known hosts to chroot home")
